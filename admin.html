@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>PTS — غرفة التحكم</title>
+  <link rel="icon" type="image/jpeg" href="assets/logo-vertical.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- ======= Login gate ======= -->
+  <div class="gate" id="gate" hidden>
+    <div class="gate__card">
+      <div class="gate__logo"><img src="assets/logo-vertical.jpg" alt="PT Soft" width="110" height="110" /></div>
+      <h1>غرفة التحكم</h1>
+      <p>هذه المنطقة مخصصة لمالك PT Soft فقط.</p>
+      <form id="gateForm">
+        <input type="password" id="gatePassword" placeholder="كلمة المرور" autocomplete="current-password" required />
+        <button type="submit" class="btn-grad" id="gateBtn">دخول</button>
+        <p class="gate__error" id="gateError" hidden>كلمة المرور غير صحيحة</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======= Control room ======= -->
+  <div class="room" id="room" hidden>
+    <header class="room__bar">
+      <div class="room__brand">
+        <img src="assets/logo-vertical.jpg" alt="" width="42" height="42" />
+        <div>
+          <strong>غرفة التحكم</strong>
+          <span>إدارة مشاريع PT Soft</span>
+        </div>
+      </div>
+      <div class="room__actions">
+        <a href="/" class="btn-ghost" target="_blank" rel="noopener">عرض الموقع ↗</a>
+        <button class="btn-ghost btn-ghost--danger" id="logoutBtn">خروج</button>
+      </div>
+    </header>
+
+    <main class="room__main">
+      <section class="panel">
+        <div class="panel__head">
+          <h2>المشاريع المعروضة <span class="count" id="projectCount"></span></h2>
+          <button class="btn-grad" id="addBtn">+ مشروع جديد</button>
+        </div>
+        <p class="panel__hint">
+          التغييرات تظهر للزوار فور الضغط على «نشر التغييرات». الوسائط المفضلة:
+          فيديو MP4 أفقي 16:9 أقل من 4MB (أخف وأنقى من GIF).
+        </p>
+        <div class="plist" id="plist"><!-- rendered --></div>
+      </section>
+    </main>
+
+    <div class="savebar" id="savebar" hidden>
+      <span id="saveMsg">لديك تغييرات غير منشورة</span>
+      <button class="btn-ghost" id="discardBtn">تراجع</button>
+      <button class="btn-grad" id="saveBtn">نشر التغييرات</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Project editor template -->
+  <template id="itemTpl">
+    <article class="pitem">
+      <header class="pitem__head">
+        <div class="pitem__order">
+          <button class="ord" data-act="up" title="تحريك لأعلى">↑</button>
+          <button class="ord" data-act="down" title="تحريك لأسفل">↓</button>
+        </div>
+        <div class="pitem__title">
+          <strong data-bind="name">—</strong>
+          <span class="pitem__status" data-bind="statusLabel"></span>
+        </div>
+        <div class="pitem__tools">
+          <button class="tool" data-act="toggle">تحرير</button>
+          <button class="tool tool--danger" data-act="delete">حذف</button>
+        </div>
+      </header>
+      <div class="pitem__body" hidden>
+        <div class="pitem__grid">
+          <div class="pitem__fields">
+            <label>اسم المشروع
+              <input type="text" data-field="name" maxlength="120" />
+            </label>
+            <label>الوصف (يظهر على البطاقة)
+              <textarea data-field="description" rows="3" maxlength="600"></textarea>
+            </label>
+            <fieldset class="chips" data-field="tech">
+              <legend>نوع المشروع / التقنيات (حتى 4)</legend>
+              <!-- chips injected -->
+              <input type="text" class="chips__custom" placeholder="+ نوع مخصص ثم Enter" maxlength="30" />
+            </fieldset>
+            <fieldset class="status" data-field="status">
+              <legend>حالة المشروع</legend>
+              <label><input type="radio" value="planned" name="" /><span class="st st--planned">قيد التخطيط</span></label>
+              <label><input type="radio" value="development" name="" /><span class="st st--dev">قيد التطوير</span></label>
+              <label><input type="radio" value="live" name="" /><span class="st st--live">تم التطوير</span></label>
+            </fieldset>
+            <label>رابط خارجي (اختياري)
+              <input type="url" data-field="link" placeholder="https://…" dir="ltr" />
+            </label>
+          </div>
+          <div class="pitem__media">
+            <span class="pitem__media-label">وسائط البطاقة</span>
+            <div class="mediabox" data-bind="media">
+              <span class="mediabox__empty">بدون وسائط — سيُولَّد غلاف فني تلقائياً</span>
+            </div>
+            <div class="mediabtns">
+              <label class="btn-ghost btn-file">
+                رفع فيديو / صورة
+                <input type="file" data-act="upload" accept="video/mp4,video/webm,image/gif,image/jpeg,image/png,image/webp" hidden />
+              </label>
+              <button class="tool tool--danger" data-act="clearMedia" hidden>إزالة الوسائط</button>
+            </div>
+            <progress class="upprog" value="0" max="100" hidden></progress>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="js/admin.js" defer></script>
+</body>
+</html>

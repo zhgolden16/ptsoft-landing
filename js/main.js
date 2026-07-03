@@ -1,7 +1,7 @@
 /* ============================================================
-   PT Soft — Landing page behavior  v2
-   Vanilla JS: brand splash, neural canvas, scroll-linked 3D
-   engine, carousels, tilt, interactive process, portfolio.
+   PT Soft — Landing page behavior  v3
+   Splash, neural canvas, scroll-linked 3D engine, carousels,
+   live portfolio from /api/projects, hidden owner entrance.
    ============================================================ */
 (() => {
   "use strict";
@@ -69,7 +69,6 @@
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0 || p.x > W) p.vx *= -1;
         if (p.y < 0 || p.y > H) p.vy *= -1;
-        // gentle pull toward pointer
         const dx = pointer.x - p.x, dy = pointer.y - p.y;
         const d2 = dx * dx + dy * dy;
         if (d2 < 22500) { p.x += dx * 0.002; p.y += dy * 0.002; }
@@ -107,7 +106,6 @@
       pointer.y = e.clientY - r.top;
     }, { passive: true });
 
-    // Pause when hero is off-screen or tab hidden
     new IntersectionObserver(([entry]) => {
       const was = running;
       running = entry.isIntersecting && !document.hidden;
@@ -121,9 +119,7 @@
     requestAnimationFrame(frame);
   }
 
-  /* ================= Scroll engine (single rAF) =================
-     Drives: progress bar, hero parallax, floating elements,
-     ECG dividers, process line. Transform/opacity only. */
+  /* ================= Scroll engine (single rAF) ================= */
   const scrollPulse = document.getElementById("scrollPulse");
   const floats = Array.from(document.querySelectorAll("[data-float]"));
   const dividers = Array.from(document.querySelectorAll(".ecg-divider__path"));
@@ -142,15 +138,12 @@
     const vh = window.innerHeight;
     const docH = document.documentElement.scrollHeight - vh;
 
-    // progress bar
     scrollPulse.style.transform = `scaleX(${docH > 0 ? y / docH : 0})`;
 
-    // hero parallax: video drifts slower + slight zoom
     if (y < vh * 1.2) {
       heroVideo.style.transform = `translateY(${y * 0.3}px) scale(${1 + y / vh * 0.08})`;
     }
 
-    // floating layers
     if (!reduced) {
       for (const el of floats) {
         const r = el.getBoundingClientRect();
@@ -159,7 +152,6 @@
       }
     }
 
-    // ECG dividers draw with scroll
     for (const p of dividers) {
       const r = p.closest(".ecg-divider").getBoundingClientRect();
       const prog = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.9)));
@@ -167,7 +159,6 @@
       p.style.strokeDashoffset = len * (1 - prog);
     }
 
-    // process line fill
     if (track) {
       const r = track.getBoundingClientRect();
       const progress = Math.min(1, Math.max(0, (vh * 0.72 - r.top) / r.height));
@@ -200,7 +191,6 @@
     }
   });
 
-  // Active section highlighting
   const navMap = new Map();
   document.querySelectorAll("[data-nav]").forEach((a) => navMap.set(a.dataset.nav, a));
   const sectionObserver = new IntersectionObserver((entries) => {
@@ -237,7 +227,77 @@
     setTimeout(() => heroTitle.classList.add("is-in"), reduced ? 0 : 400);
   }
 
-  /* ================= Portfolio rendering ================= */
+  /* ================= Card FX (reusable for dynamic cards) ================= */
+  const revealObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        revealObserver.unobserve(entry.target);
+      }
+    }
+  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+
+  let revealSeq = 0;
+  function wireReveal(el) {
+    if (!el.style.getPropertyValue("--reveal-delay")) {
+      el.style.setProperty("--reveal-delay", `${(revealSeq++ % 4) * 0.08}s`);
+    }
+    revealObserver.observe(el);
+  }
+
+  function wireGlow(el) {
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    }, { passive: true });
+  }
+
+  const MAX_TILT = 7;
+  function wireTilt(el) {
+    if (isTouch || reduced) return;
+    let raf = 0;
+    el.addEventListener("pointermove", (e) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform =
+          `perspective(900px) rotateY(${px * MAX_TILT}deg) rotateX(${-py * MAX_TILT}deg) translateY(-4px)`;
+        raf = 0;
+      });
+    });
+    el.addEventListener("pointerleave", () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      el.style.transform = "";
+    });
+  }
+
+  function wireCardFX(root) {
+    root.querySelectorAll(".reveal").forEach(wireReveal);
+    root.querySelectorAll(".glow-track").forEach(wireGlow);
+    root.querySelectorAll(".tilt").forEach(wireTilt);
+  }
+  wireCardFX(document);
+
+  if (!isTouch && !reduced) {
+    document.querySelectorAll(".magnetic").forEach((el) => {
+      el.addEventListener("pointermove", (e) => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * 0.25;
+        const y = (e.clientY - r.top - r.height / 2) * 0.35;
+        el.style.transform = `translate(${x}px, ${y}px)`;
+      });
+      el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+    });
+  }
+
+  /* ================= Portfolio (live data from API) ================= */
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
   function abstractCover(index) {
     const hues = [
       ["#1d3a5f", "#2f9d7f"],
@@ -270,24 +330,22 @@
   }
 
   function projectMedia(p, i) {
-    // media: { type: "gif" | "image" | "video", src } — falls back to
-    // legacy `cover` (image), then to a generated abstract illustration.
     const m = p.media || (p.cover ? { type: "image", src: p.cover } : null);
-    if (!m) return abstractCover(i);
+    if (!m || !m.src) return abstractCover(i);
     if (m.type === "video") {
-      return `<video src="${m.src}" muted loop autoplay playsinline preload="metadata" aria-label="${p.name} — preview"></video>`;
+      return `<video src="${esc(m.src)}" muted loop autoplay playsinline preload="metadata" aria-label="${esc(p.name)} — preview"></video>`;
     }
-    return `<img src="${m.src}" alt="${p.name} — preview" loading="lazy" decoding="async" />`;
+    return `<img src="${esc(m.src)}" alt="${esc(p.name)} — preview" loading="lazy" decoding="async" />`;
   }
 
-  function renderPortfolio() {
+  function renderPortfolio(projects) {
     const grid = document.getElementById("portfolioGrid");
-    if (!grid || typeof PTS_PROJECTS === "undefined") return;
-    grid.innerHTML = PTS_PROJECTS.map((p, i) => {
+    if (!grid) return;
+    grid.innerHTML = projects.map((p, i) => {
       const status = PTS_PROJECT_STATUS[p.status] || PTS_PROJECT_STATUS.planned;
-      const tech = p.tech.map((t) => `<span>${t}</span>`).join("");
+      const tech = (p.tech || []).map((t) => `<span>${esc(t)}</span>`).join("");
       const link = p.link
-        ? `<a class="project__link" href="${p.link}"${p.link.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>
+        ? `<a class="project__link" href="${esc(p.link)}"${p.link.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>
              View project
              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M7 17 17 7m0 0H9m8 0v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
            </a>`
@@ -296,78 +354,28 @@
         <article class="card project tilt reveal glow-track" style="--reveal-delay:${(i % 3) * 0.12}s">
           <div class="project__cover">
             ${projectMedia(p, i)}
-            <span class="project__status" style="--status-color:${status.color}">${status.label}</span>
+            <span class="project__status" style="--status-color:${status.color}">${esc(status.label)}</span>
           </div>
           <div class="project__body">
-            <h3>${p.name}</h3>
-            <p>${p.description}</p>
+            <h3>${esc(p.name)}</h3>
+            <p>${esc(p.description)}</p>
             <div class="project__tech">${tech}</div>
             ${link}
           </div>
         </article>`;
     }).join("");
+    wireCardFX(grid);
+    window.dispatchEvent(new CustomEvent("pts:portfolio-rendered"));
   }
-  renderPortfolio();
 
-  /* ================= Scroll reveal (3D) ================= */
-  const revealObserver = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        revealObserver.unobserve(entry.target);
-      }
-    }
-  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
-
-  document.querySelectorAll(".reveal").forEach((el, i) => {
-    if (!el.style.getPropertyValue("--reveal-delay")) {
-      el.style.setProperty("--reveal-delay", `${(i % 4) * 0.08}s`);
-    }
-    revealObserver.observe(el);
-  });
-
-  /* ================= 3D tilt + cursor glow ================= */
-  document.querySelectorAll(".glow-track").forEach((el) => {
-    el.addEventListener("pointermove", (e) => {
-      const r = el.getBoundingClientRect();
-      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-      el.style.setProperty("--my", `${e.clientY - r.top}px`);
-    }, { passive: true });
-  });
-
-  if (!isTouch && !reduced) {
-    const MAX_TILT = 7;
-    document.querySelectorAll(".tilt").forEach((el) => {
-      let raf = 0;
-      el.addEventListener("pointermove", (e) => {
-        if (raf) return;
-        raf = requestAnimationFrame(() => {
-          const r = el.getBoundingClientRect();
-          const px = (e.clientX - r.left) / r.width - 0.5;
-          const py = (e.clientY - r.top) / r.height - 0.5;
-          el.style.transform =
-            `perspective(900px) rotateY(${px * MAX_TILT}deg) rotateX(${-py * MAX_TILT}deg) translateY(-4px)`;
-          raf = 0;
-        });
-      });
-      el.addEventListener("pointerleave", () => {
-        cancelAnimationFrame(raf);
-        raf = 0;
-        el.style.transform = "";
-      });
-    });
-
-    // Magnetic buttons
-    document.querySelectorAll(".magnetic").forEach((el) => {
-      el.addEventListener("pointermove", (e) => {
-        const r = el.getBoundingClientRect();
-        const x = (e.clientX - r.left - r.width / 2) * 0.25;
-        const y = (e.clientY - r.top - r.height / 2) * 0.35;
-        el.style.transform = `translate(${x}px, ${y}px)`;
-      });
-      el.addEventListener("pointerleave", () => { el.style.transform = ""; });
-    });
-  }
+  // Fallback seed renders instantly; live data replaces it when it arrives.
+  if (typeof PTS_PROJECTS !== "undefined") renderPortfolio(PTS_PROJECTS);
+  fetch("/api/projects")
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((data) => {
+      if (Array.isArray(data.projects) && data.projects.length) renderPortfolio(data.projects);
+    })
+    .catch(() => { /* offline/local — seed stays */ });
 
   /* ================= Carousel dots (mobile) ================= */
   document.querySelectorAll(".carousel-dots").forEach((dotsEl) => {
@@ -387,6 +395,7 @@
     };
     build();
     mobileQuery.addEventListener("change", build);
+    window.addEventListener("pts:portfolio-rendered", build);
     let raf = 0;
     carousel.addEventListener("scroll", () => {
       if (raf) return;
@@ -414,7 +423,6 @@
         head.setAttribute("aria-expanded", String(open));
       });
     });
-    // Open the first step by default so the pattern is discoverable
     steps[0].classList.add("is-open");
     steps[0].querySelector(".process__head").setAttribute("aria-expanded", "true");
   }
@@ -437,6 +445,58 @@
         .catch(() => showToast(btn.dataset.copy));
     });
   });
+
+  /* ================= Hidden owner entrance =================
+     5 quick taps on the footer logo open the owner gate.
+     Security lives server-side (password + signed session) —
+     this is only a discreet doorway. */
+  const footerLogo = document.getElementById("footerLogo");
+  const ownerGate = document.getElementById("ownerGate");
+  if (footerLogo && ownerGate) {
+    let taps = 0, tapTimer = 0;
+    footerLogo.addEventListener("click", () => {
+      taps++;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { taps = 0; }, 1500);
+      if (taps >= 5) {
+        taps = 0;
+        ownerGate.hidden = false;
+        requestAnimationFrame(() => ownerGate.classList.add("is-open"));
+        ownerGate.querySelector("input").focus();
+      }
+    });
+
+    const closeGate = () => {
+      ownerGate.classList.remove("is-open");
+      setTimeout(() => { ownerGate.hidden = true; }, 350);
+    };
+    ownerGate.addEventListener("click", (e) => { if (e.target === ownerGate) closeGate(); });
+    ownerGate.querySelector(".ownergate__close").addEventListener("click", closeGate);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !ownerGate.hidden) closeGate();
+    });
+
+    ownerGate.querySelector("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = ownerGate.querySelector(".ownergate__error");
+      const btn = ownerGate.querySelector("button[type=submit]");
+      errEl.hidden = true;
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ password: ownerGate.querySelector("input").value }),
+        });
+        if (!res.ok) throw new Error();
+        location.href = "/admin";
+      } catch {
+        errEl.hidden = false;
+        btn.disabled = false;
+      }
+    });
+  }
 
   /* ================= Back to top ================= */
   const toTop = document.getElementById("toTop");

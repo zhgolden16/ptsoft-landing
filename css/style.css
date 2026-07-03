@@ -951,6 +951,63 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--ink); }
 }
 .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- Owner gate (hidden entrance) ---------- */
+.ownergate {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(13, 27, 46, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.ownergate.is-open { opacity: 1; }
+.ownergate__card {
+  position: relative;
+  width: min(380px, 100%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  padding: 2.2rem 1.8rem 1.8rem;
+  text-align: center;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
+  transform: translateY(18px) scale(0.97);
+  transition: transform 0.4s var(--ease);
+}
+.ownergate.is-open .ownergate__card { transform: none; }
+.ownergate__close {
+  position: absolute;
+  top: 0.9rem; right: 1rem;
+  font-size: 0.95rem;
+  color: #7c89a3;
+  transition: color 0.25s;
+}
+.ownergate__close:hover { color: var(--ink); }
+.ownergate__pulse { margin-bottom: 0.6rem; }
+.ownergate__pulse svg { width: 160px; height: 32px; margin-inline: auto; }
+.ownergate__card h2 { font-size: 1.25rem; margin-bottom: 0.2rem; }
+.ownergate__card > p { font-size: 0.88rem; color: #7c89a3; margin-bottom: 1.3rem; }
+.ownergate__card input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  letter-spacing: 0.2em;
+  outline: none;
+  margin-bottom: 0.8rem;
+  background: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.ownergate__card input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(47, 157, 127, 0.12); }
+.ownergate__card .btn { width: 100%; justify-content: center; }
+.ownergate__error { color: #c94f4f; font-size: 0.85rem; margin-top: 0.7rem; }
+#footerLogo { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
 /* ---------- Reveal animations (3D) ---------- */
 .reveal {
   opacity: 0;
