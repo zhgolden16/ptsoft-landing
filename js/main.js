@@ -454,17 +454,26 @@
   const ownerGate = document.getElementById("ownerGate");
   if (footerLogo && ownerGate) {
     let taps = 0, tapTimer = 0;
-    footerLogo.addEventListener("click", () => {
+    footerLogo.addEventListener("click", (e) => {
+      e.preventDefault(); // guard against any stray double-tap-zoom side effects
       taps++;
       clearTimeout(tapTimer);
       tapTimer = setTimeout(() => { taps = 0; }, 1500);
       if (taps >= 5) {
         taps = 0;
-        ownerGate.hidden = false;
-        requestAnimationFrame(() => ownerGate.classList.add("is-open"));
-        ownerGate.querySelector("input").focus();
+        openGate();
       }
     });
+
+    function openGate() {
+      ownerGate.hidden = false;
+      // setTimeout (not rAF) so the fade-in reliably fires even when the
+      // page isn't actively painting (e.g. tab was just switched to).
+      setTimeout(() => {
+        ownerGate.classList.add("is-open");
+        ownerGate.querySelector("input").focus();
+      }, 20);
+    }
 
     const closeGate = () => {
       ownerGate.classList.remove("is-open");
@@ -476,25 +485,46 @@
       if (e.key === "Escape" && !ownerGate.hidden) closeGate();
     });
 
+    // Show/hide password toggle — avoids silent typos on mobile keyboards.
+    const pwInput = ownerGate.querySelector("input");
+    const eyeBtn = ownerGate.querySelector(".ownergate__eye");
+    eyeBtn.addEventListener("click", () => {
+      const showing = pwInput.type === "text";
+      pwInput.type = showing ? "password" : "text";
+      eyeBtn.textContent = showing ? "👁" : "🙈";
+      eyeBtn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    });
+
     ownerGate.querySelector("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const errEl = ownerGate.querySelector(".ownergate__error");
       const btn = ownerGate.querySelector("button[type=submit]");
+      const label = btn.querySelector(".ownergate__btn-label");
       errEl.hidden = true;
       btn.disabled = true;
+      label.textContent = "Checking…";
+      let failMsg = "";
       try {
         const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
-          body: JSON.stringify({ password: ownerGate.querySelector("input").value }),
+          body: JSON.stringify({ password: pwInput.value }),
         });
-        if (!res.ok) throw new Error();
-        location.href = "/admin";
+        if (res.status === 401) failMsg = "Wrong password — try again.";
+        else if (!res.ok) failMsg = "Server error — try again in a moment.";
       } catch {
+        failMsg = "Connection failed — check your internet and try again.";
+      }
+      if (failMsg) {
+        errEl.textContent = failMsg;
         errEl.hidden = false;
         btn.disabled = false;
+        label.textContent = "Enter control room";
+        return;
       }
+      label.textContent = "Welcome ✓";
+      location.href = "/admin";
     });
   }
 

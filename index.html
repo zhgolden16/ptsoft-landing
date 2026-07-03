@@ -387,9 +387,15 @@
       <h2>Owner access</h2>
       <p>This door is for PT Soft only.</p>
       <form>
-        <input type="password" placeholder="••••••••" autocomplete="current-password" required />
-        <button type="submit" class="btn btn--primary">Enter control room</button>
-        <p class="ownergate__error" hidden>Wrong password</p>
+        <div class="ownergate__field">
+          <input type="password" placeholder="••••••••" autocomplete="current-password"
+                 autocapitalize="off" autocorrect="off" spellcheck="false" required />
+          <button type="button" class="ownergate__eye" aria-label="Show password">👁</button>
+        </div>
+        <button type="submit" class="btn btn--primary">
+          <span class="ownergate__btn-label">Enter control room</span>
+        </button>
+        <p class="ownergate__error" hidden></p>
       </form>
     </div>
   </div>
