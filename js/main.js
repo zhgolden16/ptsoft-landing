@@ -191,6 +191,19 @@
     }
   });
 
+  // In-page anchor navigation done by hand: the native hash-jump silently
+  // fails in some browsers when body clips overflow, leaving the nav tabs
+  // dead. scrollIntoView honors each section's scroll-margin-top.
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest('a[href^="#"]');
+    if (!link || link.getAttribute("href").length < 2) return;
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+    history.pushState(null, "", link.getAttribute("href"));
+  });
+
   const navMap = new Map();
   document.querySelectorAll("[data-nav]").forEach((a) => navMap.set(a.dataset.nav, a));
   const sectionObserver = new IntersectionObserver((entries) => {
@@ -233,6 +246,9 @@
       if (entry.isIntersecting) {
         entry.target.classList.add("is-visible");
         revealObserver.unobserve(entry.target);
+        // Once the reveal transition (0.85s + up to 0.24s delay) is over,
+        // drop it so inline transforms (tilt) respond instantly.
+        setTimeout(() => entry.target.classList.add("has-revealed"), 1200);
       }
     }
   }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
@@ -341,12 +357,14 @@
   function renderPortfolio(projects) {
     const grid = document.getElementById("portfolioGrid");
     if (!grid) return;
+    const t = window.ptsT || ((k) => k);
     grid.innerHTML = projects.map((p, i) => {
       const status = PTS_PROJECT_STATUS[p.status] || PTS_PROJECT_STATUS.planned;
-      const tech = (p.tech || []).map((t) => `<span>${esc(t)}</span>`).join("");
+      const statusLabel = t(`st.${p.status}`) !== `st.${p.status}` ? t(`st.${p.status}`) : status.label;
+      const tech = (p.tech || []).map((t2) => `<span>${esc(t2)}</span>`).join("");
       const link = p.link
         ? `<a class="project__link" href="${esc(p.link)}"${p.link.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>
-             View project
+             ${esc(t("pf.view"))}
              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M7 17 17 7m0 0H9m8 0v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
            </a>`
         : "";
@@ -354,7 +372,7 @@
         <article class="card project tilt reveal glow-track" style="--reveal-delay:${(i % 3) * 0.12}s">
           <div class="project__cover">
             ${projectMedia(p, i)}
-            <span class="project__status" style="--status-color:${status.color}">${esc(status.label)}</span>
+            <span class="project__status" style="--status-color:${status.color}">${esc(statusLabel)}</span>
           </div>
           <div class="project__body">
             <h3>${esc(p.name)}</h3>
@@ -441,7 +459,7 @@
       e.preventDefault();
       e.stopPropagation();
       navigator.clipboard.writeText(btn.dataset.copy)
-        .then(() => showToast("Copied ✓"))
+        .then(() => showToast((window.ptsT || ((k) => k))("toast.copied")))
         .catch(() => showToast(btn.dataset.copy));
     });
   });
@@ -500,9 +518,10 @@
       const errEl = ownerGate.querySelector(".ownergate__error");
       const btn = ownerGate.querySelector("button[type=submit]");
       const label = btn.querySelector(".ownergate__btn-label");
+      const t = window.ptsT || ((k) => k);
       errEl.hidden = true;
       btn.disabled = true;
-      label.textContent = "Checking…";
+      label.textContent = t("gate.checking");
       let failMsg = "";
       try {
         const res = await fetch("/api/login", {
@@ -511,19 +530,19 @@
           credentials: "same-origin",
           body: JSON.stringify({ password: pwInput.value }),
         });
-        if (res.status === 401) failMsg = "Wrong password — try again.";
-        else if (!res.ok) failMsg = "Server error — try again in a moment.";
+        if (res.status === 401) failMsg = t("gate.wrong");
+        else if (!res.ok) failMsg = t("gate.server");
       } catch {
-        failMsg = "Connection failed — check your internet and try again.";
+        failMsg = t("gate.conn");
       }
       if (failMsg) {
         errEl.textContent = failMsg;
         errEl.hidden = false;
         btn.disabled = false;
-        label.textContent = "Enter control room";
+        label.textContent = t("gate.btn");
         return;
       }
-      label.textContent = "Welcome ✓";
+      label.textContent = t("gate.welcome");
       location.href = "/admin";
     });
   }

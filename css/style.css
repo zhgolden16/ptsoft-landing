@@ -37,7 +37,10 @@ body {
   background: var(--bg);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  /* `hidden` turns body into a scroll container and breaks anchor
+     navigation in Chromium; `clip` clips without capturing scroll. */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 body.is-locked { overflow: hidden; }
 
@@ -145,6 +148,7 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--ink); }
   padding: clamp(4rem, 9vw, 7.5rem) 0;
   position: relative;
   overflow: hidden;
+  scroll-margin-top: 72px; /* keep anchored sections clear of the fixed nav */
 }
 
 /* Ghost watermark word behind sections */
@@ -1046,6 +1050,12 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--ink); }
   transition-delay: var(--reveal-delay, 0s);
 }
 .reveal.is-visible { opacity: 1; transform: none; }
+/* After the entrance finishes, the slow reveal transition would keep
+   swallowing the pointer-driven tilt transform — swap to a snappy one. */
+.tilt.has-revealed {
+  transition: transform 0.18s var(--ease), box-shadow 0.4s var(--ease), border-color 0.4s;
+  transition-delay: 0s;
+}
 
 /* ============================================================
    Responsive — mobile is a distinct experience, not a squeeze
@@ -1188,4 +1198,108 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--ink); }
   outline: 3px solid var(--teal-bright);
   outline-offset: 3px;
   border-radius: 6px;
+}
+
+/* ============================================================
+   Language switcher + Arabic (RTL) & French support
+   ============================================================ */
+.nav__tools { display: flex; align-items: center; gap: 0.7rem; }
+
+.lang { position: relative; font-family: var(--font-display); }
+.lang__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.lang__btn:hover { border-color: rgba(47, 157, 127, 0.4); box-shadow: var(--shadow-sm); }
+.lang__cur { min-width: 1.6em; text-align: center; }
+.lang__cur--ar { font-family: "Aref Ruqaa", serif; font-size: 1.05rem; line-height: 1; }
+.lang__caret { opacity: 0.55; transition: transform 0.3s var(--ease); }
+.lang.is-open .lang__caret { transform: rotate(180deg); }
+
+.lang__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  inset-inline-end: 0;
+  min-width: 176px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+  z-index: 150;
+}
+.lang.is-open .lang__menu { opacity: 1; transform: none; pointer-events: auto; }
+.lang__menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: start;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.lang__menu button:hover { background: rgba(47, 157, 127, 0.08); }
+.lang__menu button.is-current { background: rgba(47, 157, 127, 0.13); color: var(--teal); }
+.lang__tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: rgba(20, 33, 58, 0.07);
+  border-radius: 6px;
+  padding: 0.16rem 0.42rem;
+  min-width: 2.1em;
+  text-align: center;
+}
+/* The decorative Arabic option — ruqaa calligraphy */
+.lang__tag--ar { font-family: "Aref Ruqaa", serif; font-size: 0.95rem; letter-spacing: 0; padding: 0 0.42rem; }
+.lang__opt--ar { font-family: "Aref Ruqaa", serif; font-size: 1.08rem; }
+
+/* ---------- Arabic typography ---------- */
+html[lang="ar"] {
+  --font-display: "Cairo", "Tajawal", system-ui, sans-serif;
+  --font-body: "Tajawal", "Cairo", system-ui, sans-serif;
+}
+html[lang="ar"] body { line-height: 1.9; }
+html[lang="ar"] :is(.eyebrow, .hero__eyebrow, .contact__copy, .carousel-hint, .lang__btn) { letter-spacing: 0; }
+html[lang="ar"] .hero__title { line-height: 1.45; }
+html[lang="ar"] .section__title { line-height: 1.5; }
+
+/* ---------- RTL layout fixes ---------- */
+[dir="rtl"] .nav__links a:not(.nav__cta)::after { transform-origin: right; }
+[dir="rtl"] .process__track::before { left: auto; right: 17px; }
+[dir="rtl"] .process__step { padding: 0 3.6rem 1.1rem 0; }
+[dir="rtl"] .process__step:last-child { padding-bottom: 0; }
+[dir="rtl"] .process__dot { left: auto; right: calc(-3.6rem + 8px); }
+[dir="rtl"] .process__head { text-align: right; }
+[dir="rtl"] .process__head:hover { transform: translateX(-6px); }
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }
+@media (max-width: 820px) {
+  [dir="rtl"] .process__step { padding: 0 3rem 1.1rem 0; }
+  [dir="rtl"] .process__dot { left: auto; right: calc(-3rem + 5px); }
+  [dir="rtl"] .process__track::before { left: auto; right: 14px; }
+  [dir="rtl"] .nav__links { right: auto; left: 3%; }
 }
