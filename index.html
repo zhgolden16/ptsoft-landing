@@ -17,7 +17,7 @@
   <meta property="og:site_name" content="PT Soft" />
 
   <link rel="icon" type="image/jpeg" href="assets/logo-vertical.jpg" />
-  <link rel="preload" as="image" href="assets/logo-horizontal.jpg" />
+  <link rel="preload" as="image" href="assets/logo-vertical.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,6 +42,25 @@
 </head>
 <body>
 
+  <!-- ======= Brand splash intro ======= -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash__inner">
+      <div class="splash__card"><img src="assets/logo-vertical.jpg" alt="" width="150" height="150" /></div>
+      <svg class="splash__ecg" viewBox="0 0 320 60" aria-hidden="true">
+        <path d="M0 30h96l14-22 20 44 16-30 10 12h164" fill="none" stroke="url(#splashGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="splashGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#3b6ea5"/><stop offset=".6" stop-color="#2f9d7f"/><stop offset="1" stop-color="#43c6a8"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <p class="splash__tag">built around your work</p>
+    </div>
+  </div>
+
+  <!-- Scroll progress pulse bar -->
+  <div class="scrollbar-pulse" id="scrollPulse" aria-hidden="true"></div>
+
   <!-- ======= Navigation ======= -->
   <header class="nav" id="nav">
     <div class="nav__inner">
@@ -50,11 +69,11 @@
         <img class="nav__logo nav__logo--mark" src="assets/logo-vertical.jpg" alt="PT Soft — Pulse Tailor Soft" width="48" height="48" />
       </a>
       <nav class="nav__links" id="navLinks" aria-label="Primary">
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#portfolio">Portfolio</a>
-        <a href="#why">Why PTS</a>
-        <a href="#process">Process</a>
+        <a href="#about" data-nav="about">About</a>
+        <a href="#services" data-nav="services">Services</a>
+        <a href="#portfolio" data-nav="portfolio">Portfolio</a>
+        <a href="#why" data-nav="why">Why PTS</a>
+        <a href="#process" data-nav="process">Process</a>
         <a href="#contact" class="nav__cta">Start a project</a>
       </nav>
       <button class="nav__burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
@@ -68,27 +87,38 @@
     <!-- ======= Hero ======= -->
     <section class="hero" id="hero" aria-label="PT Soft — AI-first software engineering">
       <div class="hero__media" aria-hidden="true">
-        <video id="heroVideo" class="hero__video" autoplay muted loop playsinline preload="auto"></video>
+        <video id="heroVideo" class="hero__video" data-depth autoplay muted loop playsinline preload="auto"></video>
         <div class="hero__veil"></div>
+        <canvas id="neuralCanvas" class="hero__canvas"></canvas>
         <div class="hero__grid"></div>
+      </div>
+
+      <!-- Floating glass chips (3D depth layer) -->
+      <div class="hero__chips" aria-hidden="true">
+        <span class="chip chip--1" data-float="0.35">{ / }</span>
+        <span class="chip chip--2" data-float="0.55">AI</span>
+        <span class="chip chip--3" data-float="0.25">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21M5.6 5.6l1.9 1.9m9 9 1.9 1.9m0-12.8-1.9 1.9m-9 9-1.9 1.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        <span class="chip chip--4" data-float="0.45">⌁ pulse</span>
       </div>
 
       <div class="hero__content">
         <p class="hero__eyebrow reveal"><span class="pulse-dot" aria-hidden="true"></span> AI-first software engineering</p>
-        <h1 class="hero__title reveal">
-          Intelligent systems,<br />
-          <span class="grad-text">built around your work.</span>
+        <h1 class="hero__title" id="heroTitle">
+          <span class="line">Intelligent systems,</span>
+          <span class="line grad-text">built around your work.</span>
         </h1>
         <p class="hero__sub reveal">
           PT Soft designs and engineers software that transforms traditional businesses into
           organized, automated, data-driven organizations — from AI solutions to enterprise platforms.
         </p>
         <div class="hero__actions reveal">
-          <a href="#contact" class="btn btn--primary">
+          <a href="#contact" class="btn btn--primary magnetic">
             Start a project
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <a href="#portfolio" class="btn btn--ghost">Explore our work</a>
+          <a href="#portfolio" class="btn btn--ghost magnetic">Explore our work</a>
         </div>
       </div>
 
@@ -97,8 +127,16 @@
       </a>
     </section>
 
+    <!-- ECG divider: draws itself while you scroll -->
+    <div class="ecg-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 80" preserveAspectRatio="none">
+        <path class="ecg-divider__path" d="M0 40h420l24-26 32 52 26-38 18 14h680" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
     <!-- ======= About ======= -->
     <section class="section about" id="about">
+      <span class="section__ghost" aria-hidden="true" data-float="0.14">PTS</span>
       <div class="container">
         <div class="about__grid">
           <div class="about__text">
@@ -115,12 +153,12 @@
               through the entire workflow — not bolted on as an afterthought.
             </p>
             <ul class="about__facts reveal" role="list">
-              <li><strong>AI-first</strong><span>by design, not by add-on</span></li>
-              <li><strong>Full-stack</strong><span>web · desktop · Android</span></li>
-              <li><strong>Enterprise-grade</strong><span>secure &amp; scalable</span></li>
+              <li class="glow-track"><strong>AI-first</strong><span>by design, not by add-on</span></li>
+              <li class="glow-track"><strong>Full-stack</strong><span>web · desktop · Android</span></li>
+              <li class="glow-track"><strong>Enterprise</strong><span>secure &amp; scalable</span></li>
             </ul>
           </div>
-          <div class="about__visual reveal" aria-hidden="true">
+          <div class="about__visual reveal" data-float="0.22">
             <div class="orbit-card tilt">
               <svg class="orbit-svg" viewBox="0 0 400 400" role="img" aria-label="">
                 <defs>
@@ -144,12 +182,14 @@
 
     <!-- ======= Services ======= -->
     <section class="section services" id="services">
+      <span class="section__ghost" aria-hidden="true" data-float="0.1">BUILD</span>
       <div class="container">
         <p class="eyebrow reveal">What we build</p>
         <h2 class="section__title reveal">Services engineered for<br /><span class="grad-text">serious businesses.</span></h2>
-        <div class="services__grid" id="servicesGrid">
+        <p class="carousel-hint reveal" aria-hidden="true">swipe →</p>
+        <div class="services__grid carousel" id="servicesGrid">
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c2.5.5 4 2.4 4 5 0 1.6-.6 3-1.7 4A4.5 4.5 0 0 1 14 21h-4a4.5 4.5 0 0 1-4.3-6A5.4 5.4 0 0 1 4 11c0-2.6 1.5-4.5 4-5a4 4 0 0 1 4-4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 11.5 11 13l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
@@ -157,7 +197,7 @@
             <p>Machine intelligence applied to real operations: prediction, document understanding, decision support, and AI assistants embedded in your workflow.</p>
           </article>
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 8.5h19M6 6.2h.01M8.5 6.2h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m9 12-2 2 2 2m6-4 2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
@@ -165,7 +205,7 @@
             <p>Fast, secure, scalable web platforms — from client portals to full SaaS products — with clean architecture and modern UX.</p>
           </article>
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="3" y="3.5" width="18" height="12.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 20.5h7M12 16v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             </div>
@@ -173,7 +213,7 @@
             <p>Powerful native desktop tools for production floors, back offices, and points of sale — built for speed and offline reliability.</p>
           </article>
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 5h3M12 18.6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             </div>
@@ -181,7 +221,7 @@
             <p>Mobile apps that put your business in your team's pocket — field operations, sales, and management from anywhere.</p>
           </article>
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.8v3m0 12.4v3M2.8 12h3m12.4 0h3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1m0-13-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             </div>
@@ -189,7 +229,7 @@
             <p>We remove repetitive manual work: automated documents, notifications, stock, billing, and reporting that run themselves.</p>
           </article>
 
-          <article class="card service tilt reveal">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M3.5 20.5v-7l4-2.5v-4L12 4l4.5 3v4l4 2.5v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3.5 20.5h17M9.8 20.5v-3.4h4.4v3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </div>
@@ -197,80 +237,96 @@
             <p>Custom ERP-class systems shaped around your exact processes — inventory, production, HR, finance — under one roof.</p>
           </article>
 
-          <article class="card service tilt reveal service--wide">
+          <article class="card service tilt reveal glow-track">
             <div class="service__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="2.5" y="9" width="6" height="6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15.5" y="2.5" width="6" height="6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15.5" y="15.5" width="6" height="6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12h3.5m0 0V5.5h3.5M12 12v6.5h3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             </div>
             <h3>System Integration</h3>
-            <p>We connect what you already use — payment providers, hardware, legacy databases, third-party APIs — into one coherent, synchronized ecosystem.</p>
+            <p>We connect what you already use — payments, hardware, legacy databases, third-party APIs — into one coherent ecosystem.</p>
           </article>
 
         </div>
+        <div class="carousel-dots" data-dots-for="servicesGrid" aria-hidden="true"></div>
       </div>
     </section>
 
+    <div class="ecg-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 80" preserveAspectRatio="none">
+        <path class="ecg-divider__path" d="M1200 40H780l-24-26-32 52-26-38-18 14H0" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
     <!-- ======= Portfolio ======= -->
     <section class="section portfolio" id="portfolio">
+      <span class="section__ghost" aria-hidden="true" data-float="0.12">WORK</span>
       <div class="container">
         <p class="eyebrow reveal">Portfolio</p>
         <h2 class="section__title reveal">Products with a <span class="grad-text">pulse.</span></h2>
         <p class="lead lead--center reveal">A growing catalogue of systems we design, build, and operate.</p>
-        <div class="portfolio__grid" id="portfolioGrid">
+        <p class="carousel-hint reveal" aria-hidden="true">swipe →</p>
+        <div class="portfolio__grid carousel" id="portfolioGrid">
           <!-- Rendered from js/projects.js -->
         </div>
+        <div class="carousel-dots" data-dots-for="portfolioGrid" aria-hidden="true"></div>
       </div>
     </section>
 
     <!-- ======= Why Choose ======= -->
     <section class="section why" id="why">
+      <div class="why__orb why__orb--1" aria-hidden="true" data-float="0.3"></div>
+      <div class="why__orb why__orb--2" aria-hidden="true" data-float="0.18"></div>
       <div class="container">
         <p class="eyebrow eyebrow--light reveal">Why choose PT Soft</p>
         <h2 class="section__title section__title--light reveal">Engineering standards,<br /><span class="grad-text">not shortcuts.</span></h2>
         <div class="why__grid">
-          <div class="why__item reveal"><span class="why__num">01</span><h3>AI-first development</h3><p>Intelligence is part of the architecture from day one — not a plugin added later.</p></div>
-          <div class="why__item reveal"><span class="why__num">02</span><h3>Modern architecture</h3><p>Modular, documented, testable systems that welcome change instead of resisting it.</p></div>
-          <div class="why__item reveal"><span class="why__num">03</span><h3>High performance</h3><p>Every screen, query, and workflow is engineered to feel instant — even under load.</p></div>
-          <div class="why__item reveal"><span class="why__num">04</span><h3>Secure systems</h3><p>Access control, encryption, and auditability treated as core features, not options.</p></div>
-          <div class="why__item reveal"><span class="why__num">05</span><h3>Clean code</h3><p>Readable, consistent, reviewed code — the foundation of software that lasts.</p></div>
-          <div class="why__item reveal"><span class="why__num">06</span><h3>Long-term maintainability</h3><p>We build products you can still evolve confidently five years from now.</p></div>
-          <div class="why__item reveal"><span class="why__num">07</span><h3>Professional project management</h3><p>Clear milestones, honest timelines, and transparent communication from kickoff to support.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">01</span><h3>AI-first development</h3><p>Intelligence is part of the architecture from day one — not a plugin added later.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">02</span><h3>Modern architecture</h3><p>Modular, documented, testable systems that welcome change instead of resisting it.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">03</span><h3>High performance</h3><p>Every screen, query, and workflow is engineered to feel instant — even under load.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">04</span><h3>Secure systems</h3><p>Access control, encryption, and auditability treated as core features, not options.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">05</span><h3>Clean code</h3><p>Readable, consistent, reviewed code — the foundation of software that lasts.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">06</span><h3>Maintainability</h3><p>We build products you can still evolve confidently five years from now.</p></div>
+          <div class="why__item glow-track reveal"><span class="why__num">07</span><h3>Professional management</h3><p>Clear milestones, honest timelines, and transparent communication from kickoff to support.</p></div>
         </div>
       </div>
     </section>
 
     <!-- ======= Process ======= -->
     <section class="section process" id="process">
+      <span class="section__ghost" aria-hidden="true" data-float="0.1">FLOW</span>
       <div class="container">
         <p class="eyebrow reveal">How we work</p>
         <h2 class="section__title reveal">A workflow with a <span class="grad-text">heartbeat.</span></h2>
+        <p class="process__hint reveal">Tap any step to expand it.</p>
         <ol class="process__track" id="processTrack">
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Discovery</h3><p>We study your business, workflows, and pain points before writing a single line of code.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Planning</h3><p>Scope, milestones, and priorities are defined together — no surprises later.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Architecture</h3><p>We design the data model, integrations, and system structure for scale and security.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Development</h3><p>Iterative builds with regular demos, so you see real progress — not promises.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Testing</h3><p>Functional, performance, and security testing on real scenarios from your operation.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Deployment</h3><p>Smooth rollout, data migration, and hands-on training for your team.</p></div></li>
-          <li class="process__step reveal"><span class="process__dot" aria-hidden="true"></span><div class="process__card"><h3>Support</h3><p>Monitoring, updates, and continuous improvement long after launch day.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Discovery</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>We study your business, workflows, and pain points before writing a single line of code.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Planning</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>Scope, milestones, and priorities are defined together — no surprises later.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Architecture</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>We design the data model, integrations, and system structure for scale and security.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Development</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>Iterative builds with regular demos, so you see real progress — not promises.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Testing</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>Functional, performance, and security testing on real scenarios from your operation.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Deployment</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>Smooth rollout, data migration, and hands-on training for your team.</p></div></li>
+          <li class="process__step reveal"><button class="process__head" aria-expanded="false"><span class="process__dot" aria-hidden="true"></span><h3>Support</h3><span class="process__plus" aria-hidden="true"></span></button><div class="process__body"><p>Monitoring, updates, and continuous improvement long after launch day.</p></div></li>
         </ol>
       </div>
     </section>
 
     <!-- ======= Contact ======= -->
     <section class="section contact" id="contact">
+      <span class="section__ghost" aria-hidden="true" data-float="0.12">TALK</span>
       <div class="container">
         <p class="eyebrow reveal">Contact</p>
         <h2 class="section__title reveal">Let's build something<br /><span class="grad-text">intelligent together.</span></h2>
         <p class="lead lead--center reveal">Tell us about your project — we answer fast.</p>
         <div class="contact__grid">
-          <a class="card contact__card tilt reveal" href="https://wa.me/2137997992162" target="_blank" rel="noopener">
+          <a class="card contact__card tilt reveal glow-track" href="https://wa.me/2137997992162" target="_blank" rel="noopener">
             <div class="contact__icon contact__icon--wa" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.7-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8.5c-.3 2.3 3.9 6.6 6.3 6.4.6-.1 1.2-.7 1.2-1.3 0-.5-1.2-1.3-1.8-1.3s-.8.6-1.3.5c-.9-.3-2.4-1.8-2.6-2.7-.1-.5.5-.7.5-1.3 0-.5-.8-1.7-1.3-1.7-.5 0-1 .8-1 1.4Z" fill="currentColor"/></svg>
             </div>
             <h3>WhatsApp</h3>
             <p class="contact__value" dir="ltr">+213 799 79 92 162</p>
+            <button class="contact__copy" data-copy="+2137997992162" aria-label="Copy phone number">copy</button>
             <span class="contact__hint">Chat with us directly →</span>
           </a>
-          <a class="card contact__card tilt reveal" href="https://www.facebook.com/search/top?q=Pulse%20Tailor" target="_blank" rel="noopener">
+          <a class="card contact__card tilt reveal glow-track" href="https://www.facebook.com/search/top?q=Pulse%20Tailor" target="_blank" rel="noopener">
             <div class="contact__icon contact__icon--fb" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M14.5 21v-7h2.6l.4-3h-3V9.1c0-.9.3-1.6 1.7-1.6h1.4V4.8c-.3 0-1.2-.1-2.2-.1-2.2 0-3.9 1.4-3.9 4V11H9v3h2.5v7Z" fill="currentColor"/></svg>
             </div>
@@ -278,12 +334,13 @@
             <p class="contact__value">Pulse Tailor</p>
             <span class="contact__hint">Follow our page →</span>
           </a>
-          <a class="card contact__card tilt reveal" href="mailto:ptsoftinfo@gmail.com">
+          <a class="card contact__card tilt reveal glow-track" href="mailto:ptsoftinfo@gmail.com">
             <div class="contact__icon contact__icon--mail" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <h3>Email</h3>
             <p class="contact__value">ptsoftinfo@gmail.com</p>
+            <button class="contact__copy" data-copy="ptsoftinfo@gmail.com" aria-label="Copy email address">copy</button>
             <span class="contact__hint">Send us a brief →</span>
           </a>
         </div>
@@ -293,6 +350,11 @@
 
   <!-- ======= Footer ======= -->
   <footer class="footer">
+    <div class="footer__pulse" aria-hidden="true">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+        <path d="M0 30h480l18-22 26 44 20-30 12 8h644" fill="none" stroke="rgba(67,198,168,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div class="container footer__inner">
       <div class="footer__brand">
         <img src="assets/logo-horizontal.jpg" alt="PT Soft — Pulse Tailor Soft, built around your work" width="220" height="103" loading="lazy" />
@@ -306,6 +368,14 @@
       <p class="footer__copy">© <span id="year">2026</span> PT Soft — Pulse Tailor Soft. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Back to top -->
+  <button class="totop" id="toTop" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="js/projects.js" defer></script>
   <script src="js/main.js" defer></script>

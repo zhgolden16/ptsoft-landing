@@ -8,13 +8,22 @@
      description: "One or two sentences.",     // required
      tech:        ["Stack", "Items"],          // required
      status:      "live" | "development" | "planned",  // required
-     cover:       "assets/covers/my-cover.jpg",// optional — omit to
-                                               // auto-generate an
-                                               // abstract brand cover
+     media: {                                  // optional — best way
+       type: "gif" | "image" | "video",        // to show the software
+       src:  "assets/work/my-demo.gif"         // in action
+     },
+     cover:       "assets/work/cover.jpg",     // optional (legacy image)
      link:        "https://…"                  // optional
    }
 
-   The grid layout scales automatically as entries grow.
+   Recommended media specs:
+   - GIF/video: 16:9, ~800×450, under 3 MB, short loop (5–10 s)
+   - Videos (.mp4) are lighter than GIFs for the same quality —
+     prefer mp4 when possible; they autoplay muted in a loop.
+   - Drop files into site/assets/work/ and reference them here.
+
+   If no media/cover is given, a premium abstract brand
+   illustration is generated automatically.
    ============================================================ */
 
 const PTS_PROJECT_STATUS = {
