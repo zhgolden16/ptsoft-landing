@@ -191,16 +191,41 @@
     }
   });
 
-  // In-page anchor navigation done by hand: the native hash-jump silently
-  // fails in some browsers when body clips overflow, leaving the nav tabs
-  // dead. scrollIntoView honors each section's scroll-margin-top.
+  // In-page anchor navigation done fully by hand. Both native hash-jumps
+  // and browser smooth scrolling (scroll-behavior / scrollIntoView smooth)
+  // proved unreliable on this page in Chromium, so we animate the scroll
+  // ourselves with instant per-frame scrollTo steps — nothing to stall.
+  // setTimeout (not rAF) drives the steps so the scroll still completes in
+  // throttled/background tabs where rAF is paused.
+  let scrollAnim = 0;
+  function animateScrollTo(targetY) {
+    clearTimeout(scrollAnim);
+    const startY = window.scrollY;
+    const dist = targetY - startY;
+    if (Math.abs(dist) < 2) return;
+    if (reduced) return window.scrollTo(0, targetY);
+    const dur = Math.min(900, 380 + Math.abs(dist) * 0.22);
+    const t0 = performance.now();
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const step = () => {
+      const p = Math.min(1, (performance.now() - t0) / dur);
+      window.scrollTo(0, startY + dist * ease(p));
+      if (p < 1) scrollAnim = setTimeout(step, 16);
+    };
+    step();
+  }
+  // A wheel/touch interaction from the user takes over immediately.
+  window.addEventListener("wheel", () => clearTimeout(scrollAnim), { passive: true });
+  window.addEventListener("touchstart", () => clearTimeout(scrollAnim), { passive: true });
+
   document.addEventListener("click", (e) => {
     const link = e.target.closest('a[href^="#"]');
     if (!link || link.getAttribute("href").length < 2) return;
     const target = document.querySelector(link.getAttribute("href"));
     if (!target) return;
     e.preventDefault();
-    target.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+    const navH = (nav && nav.offsetHeight) || 76;
+    animateScrollTo(target.getBoundingClientRect().top + window.scrollY - navH - 8);
     history.pushState(null, "", link.getAttribute("href"));
   });
 
@@ -552,7 +577,7 @@
   window.addEventListener("scroll", () => {
     toTop.classList.toggle("is-visible", window.scrollY > 700);
   }, { passive: true });
-  toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }));
+  toTop.addEventListener("click", () => animateScrollTo(0));
 
   /* ================= Footer year ================= */
   document.getElementById("year").textContent = new Date().getFullYear();

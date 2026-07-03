@@ -115,6 +115,9 @@ const PTS_I18N = {
     "ct.mailHint": "Send us a brief →",
 
     "ft.rights": "All rights reserved.",
+    "ft.privacy": "Privacy Policy",
+    "legal.title": "PT Soft — Privacy Policy",
+    "legal.back": "← Back to site",
 
     "gate.title": "Owner access",
     "gate.desc": "This door is for PT Soft only.",
@@ -237,6 +240,9 @@ const PTS_I18N = {
     "ct.mailHint": "Envoyez-nous un brief →",
 
     "ft.rights": "Tous droits réservés.",
+    "ft.privacy": "Politique de confidentialité",
+    "legal.title": "PT Soft — Politique de confidentialité",
+    "legal.back": "← Retour au site",
 
     "gate.title": "Accès propriétaire",
     "gate.desc": "Cette porte est réservée à PT Soft.",
@@ -359,6 +365,9 @@ const PTS_I18N = {
     "ct.mailHint": "أرسل لنا نبذة ←",
 
     "ft.rights": "جميع الحقوق محفوظة.",
+    "ft.privacy": "سياسة الخصوصية",
+    "legal.title": "PT Soft — سياسة الخصوصية",
+    "legal.back": "→ العودة إلى الموقع",
 
     "gate.title": "دخول المالك",
     "gate.desc": "هذا الباب مخصص لـ PT Soft فقط.",
@@ -389,9 +398,14 @@ const PTS_I18N = {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
 
-  document.title = window.ptsT("meta.title");
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) metaDesc.setAttribute("content", window.ptsT("meta.desc"));
+  // Pages other than the landing set <body data-i18n-page="…"> to get
+  // their own translated <title> (key: "<page>.title").
+  const page = document.body.dataset.i18nPage;
+  document.title = window.ptsT(page ? `${page}.title` : "meta.title");
+  if (!page) {
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", window.ptsT("meta.desc"));
+  }
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     el.textContent = window.ptsT(el.dataset.i18n);
