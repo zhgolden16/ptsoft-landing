@@ -37,6 +37,12 @@
   }
   applyHeroSource(mobileQuery.matches);
   mobileQuery.addEventListener("change", (e) => applyHeroSource(e.matches));
+  // The looping hero video keeps decoding even when scrolled far past it —
+  // pause it off-screen (perf), resume when the hero returns.
+  new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting) heroVideo.play().catch(() => {});
+    else heroVideo.pause();
+  }).observe(document.getElementById("hero"));
 
   /* ================= Neural network canvas ================= */
   const canvas = document.getElementById("neuralCanvas");
@@ -44,8 +50,9 @@
     const ctx = canvas.getContext("2d");
     let W = 0, H = 0, nodes = [], running = true;
     const pointer = { x: -9999, y: -9999 };
-    const COUNT = () => (mobileQuery.matches ? 26 : 60);
+    const COUNT = () => (mobileQuery.matches ? 18 : 42);
     const LINK = 130;
+    const FRAME_MS = 33; // ~30fps is plenty for ambient motion, halves the cost
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -62,8 +69,11 @@
       }));
     }
 
-    function frame() {
+    let lastFrame = 0;
+    function frame(now) {
       if (!running) return;
+      if (now && now - lastFrame < FRAME_MS) { requestAnimationFrame(frame); return; }
+      lastFrame = now || 0;
       ctx.clearRect(0, 0, W, H);
       for (const p of nodes) {
         p.x += p.vx; p.y += p.vy;
@@ -144,24 +154,29 @@
       heroVideo.style.transform = `translateY(${y * 0.3}px) scale(${1 + y / vh * 0.08})`;
     }
 
-    if (!reduced) {
-      for (const el of floats) {
-        const r = el.getBoundingClientRect();
+    // Batch all layout READS first, then all WRITES — interleaving them
+    // forces a reflow per element and was a main source of jank.
+    const floatRects = reduced ? null : floats.map((el) => el.getBoundingClientRect());
+    const dividerRects = dividers.map((p) => p.closest(".ecg-divider").getBoundingClientRect());
+    const trackRect = track ? track.getBoundingClientRect() : null;
+
+    if (floatRects) {
+      floats.forEach((el, i) => {
+        const r = floatRects[i];
         const center = r.top + r.height / 2 - vh / 2;
         el.style.transform = `translate3d(0, ${(-center * parseFloat(el.dataset.float) * 0.2).toFixed(1)}px, 0)`;
-      }
+      });
     }
 
-    for (const p of dividers) {
-      const r = p.closest(".ecg-divider").getBoundingClientRect();
+    dividers.forEach((p, i) => {
+      const r = dividerRects[i];
       const prog = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.9)));
       const len = parseFloat(p.style.getPropertyValue("--ecg-len"));
       p.style.strokeDashoffset = len * (1 - prog);
-    }
+    });
 
-    if (track) {
-      const r = track.getBoundingClientRect();
-      const progress = Math.min(1, Math.max(0, (vh * 0.72 - r.top) / r.height));
+    if (trackRect) {
+      const progress = Math.min(1, Math.max(0, (vh * 0.72 - trackRect.top) / trackRect.height));
       track.style.setProperty("--line-progress", `${(progress * 100).toFixed(1)}%`);
     }
   }
@@ -370,23 +385,53 @@
       </svg>`;
   }
 
-  function projectMedia(p, i) {
+  /* full media list for the lightbox: gallery array, else legacy single */
+  function galleryOf(p) {
+    if (Array.isArray(p.gallery) && p.gallery.length) return p.gallery;
     const m = p.media || (p.cover ? { type: "image", src: p.cover } : null);
-    if (!m || !m.src) return abstractCover(i);
+    return m && m.src ? [m] : [];
+  }
+
+  function projectMedia(p, i) {
+    const items = galleryOf(p);
+    if (!items.length) return abstractCover(i);
+    const m = items[0];
     if (m.type === "video") {
-      return `<video src="${esc(m.src)}" muted loop autoplay playsinline preload="metadata" aria-label="${esc(p.name)} — preview"></video>`;
+      // no autoplay attribute — an IntersectionObserver plays covers only
+      // while they are on screen (page was getting heavy with all videos
+      // running at once)
+      return `<video src="${esc(m.src)}" muted loop playsinline preload="metadata" data-cover-video aria-label="${esc(p.name)} — preview"></video>`;
     }
     return `<img src="${esc(m.src)}" alt="${esc(p.name)} — preview" loading="lazy" decoding="async" />`;
   }
 
+  /* play card cover videos only while visible */
+  const coverVideoIO = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      if (en.isIntersecting) en.target.play().catch(() => {});
+      else en.target.pause();
+    }
+  }, { threshold: 0.25 });
+
+  let lastProjects = [];
+
   function renderPortfolio(projects) {
     const grid = document.getElementById("portfolioGrid");
     if (!grid) return;
+    lastProjects = projects;
     const t = window.ptsT || ((k) => k);
     grid.innerHTML = projects.map((p, i) => {
       const status = PTS_PROJECT_STATUS[p.status] || PTS_PROJECT_STATUS.planned;
       const statusLabel = t(`st.${p.status}`) !== `st.${p.status}` ? t(`st.${p.status}`) : status.label;
       const tech = (p.tech || []).map((t2) => `<span>${esc(t2)}</span>`).join("");
+      const items = galleryOf(p);
+      const peek = items.length
+        ? `<div class="project__peek" aria-hidden="true">
+             <svg viewBox="0 0 24 24" width="17" height="17"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+             <span>${esc(t("lb.open"))}</span>
+             <span class="project__peek-count">${items.length}</span>
+           </div>`
+        : "";
       const link = p.link
         ? `<a class="project__link" href="${esc(p.link)}"${p.link.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>
              ${esc(t("pf.view"))}
@@ -394,10 +439,11 @@
            </a>`
         : "";
       return `
-        <article class="card project tilt reveal glow-track" style="--reveal-delay:${(i % 3) * 0.12}s">
+        <article class="card project tilt reveal glow-track${items.length ? " project--openable" : ""}" data-project-index="${i}" style="--reveal-delay:${(i % 3) * 0.12}s"${items.length ? ` tabindex="0" role="button" aria-label="${esc(p.name)} — ${esc(t("lb.open"))}"` : ""}>
           <div class="project__cover">
             ${projectMedia(p, i)}
             <span class="project__status" style="--status-color:${status.color}">${esc(statusLabel)}</span>
+            ${peek}
           </div>
           <div class="project__body">
             <h3>${esc(p.name)}</h3>
@@ -408,8 +454,132 @@
         </article>`;
     }).join("");
     wireCardFX(grid);
+    grid.querySelectorAll("[data-cover-video]").forEach((v) => coverVideoIO.observe(v));
     window.dispatchEvent(new CustomEvent("pts:portfolio-rendered"));
   }
+
+  /* open the gallery from anywhere on an openable card (except real links) */
+  const portfolioGridEl = document.getElementById("portfolioGrid");
+  if (portfolioGridEl) {
+    portfolioGridEl.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      const card = e.target.closest(".project--openable");
+      if (card) openLightbox(lastProjects[Number(card.dataset.projectIndex)]);
+    });
+    portfolioGridEl.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest(".project--openable");
+      if (card) { e.preventDefault(); openLightbox(lastProjects[Number(card.dataset.projectIndex)]); }
+    });
+  }
+
+  /* ================= Media lightbox (fullscreen gallery) ================= */
+  const lb = document.createElement("div");
+  lb.className = "lb";
+  lb.hidden = true;
+  lb.innerHTML = `
+    <button class="lb__close" aria-label="Close">✕</button>
+    <div class="lb__stage">
+      <button class="lb__nav lb__nav--prev" aria-label="Previous">‹</button>
+      <div class="lb__track" tabindex="-1"></div>
+      <button class="lb__nav lb__nav--next" aria-label="Next">›</button>
+    </div>
+    <div class="lb__meta">
+      <h3 class="lb__title"></h3>
+      <span class="lb__counter"></span>
+    </div>`;
+  document.body.appendChild(lb);
+  const lbTrack = lb.querySelector(".lb__track");
+  const lbTitle = lb.querySelector(".lb__title");
+  const lbCounter = lb.querySelector(".lb__counter");
+  let lbCount = 0;
+  let lbIndex = 0;
+
+  // element-scroll animator (same instant-steps approach as page anchors —
+  // browser smooth scrolling is unreliable on this site)
+  let lbAnim = 0;
+  function lbScrollToSlide(idx) {
+    clearTimeout(lbAnim);
+    const w = lbTrack.clientWidth;
+    const dirMul = document.documentElement.dir === "rtl" ? -1 : 1;
+    const target = idx * w * dirMul;
+    const start = lbTrack.scrollLeft;
+    const dist = target - start;
+    if (!dist) return;
+    if (reduced) { lbTrack.scrollLeft = target; return; }
+    const t0 = performance.now();
+    const dur = 320;
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const step = () => {
+      const pr = Math.min(1, (performance.now() - t0) / dur);
+      lbTrack.scrollLeft = start + dist * ease(pr);
+      if (pr < 1) lbAnim = setTimeout(step, 16);
+    };
+    step();
+  }
+
+  function lbSyncIndex() {
+    const w = lbTrack.clientWidth || 1;
+    const idx = Math.min(lbCount - 1, Math.max(0, Math.round(Math.abs(lbTrack.scrollLeft) / w)));
+    if (idx === lbIndex) return;
+    lbIndex = idx;
+    lbUpdate();
+  }
+  let lbScrollRaf = 0;
+  lbTrack.addEventListener("scroll", () => {
+    if (lbScrollRaf) return;
+    lbScrollRaf = requestAnimationFrame(() => { lbSyncIndex(); lbScrollRaf = 0; });
+  }, { passive: true });
+
+  function lbUpdate() {
+    lbCounter.textContent = `${lbIndex + 1} / ${lbCount}`;
+    lb.querySelector(".lb__nav--prev").disabled = lbIndex === 0;
+    lb.querySelector(".lb__nav--next").disabled = lbIndex === lbCount - 1;
+    // play only the active slide's video, pause the rest
+    lbTrack.querySelectorAll("video").forEach((v, vi) => {
+      if (Number(v.dataset.slide) === lbIndex) v.play().catch(() => {});
+      else v.pause();
+    });
+  }
+
+  function openLightbox(project) {
+    if (!project) return;
+    const items = galleryOf(project);
+    if (!items.length) return;
+    lbCount = items.length;
+    lbIndex = 0;
+    lbTitle.textContent = project.name || "";
+    lbTrack.innerHTML = items.map((m, mi) => {
+      const portrait = m.orientation === "portrait" ? " lb__media--portrait" : "";
+      const media = m.type === "video"
+        ? `<video src="${esc(m.src)}" class="lb__media${portrait}" data-slide="${mi}" controls playsinline preload="metadata"></video>`
+        : `<img src="${esc(m.src)}" class="lb__media${portrait}" alt="${esc(project.name)} — ${mi + 1}" loading="lazy" decoding="async" />`;
+      return `<div class="lb__slide">${media}</div>`;
+    }).join("");
+    lb.hidden = false;
+    document.body.classList.add("is-locked");
+    lbTrack.scrollLeft = 0;
+    lbUpdate();
+    lb.querySelector(".lb__close").focus();
+  }
+
+  function closeLightbox() {
+    lbTrack.querySelectorAll("video").forEach((v) => v.pause());
+    lb.hidden = true;
+    document.body.classList.remove("is-locked");
+    lbTrack.innerHTML = "";
+  }
+
+  lb.querySelector(".lb__close").addEventListener("click", closeLightbox);
+  lb.addEventListener("click", (e) => { if (e.target === lb) closeLightbox(); });
+  lb.querySelector(".lb__nav--prev").addEventListener("click", () => lbScrollToSlide(Math.max(0, lbIndex - 1)));
+  lb.querySelector(".lb__nav--next").addEventListener("click", () => lbScrollToSlide(Math.min(lbCount - 1, lbIndex + 1)));
+  document.addEventListener("keydown", (e) => {
+    if (lb.hidden) return;
+    if (e.key === "Escape") closeLightbox();
+    else if (e.key === "ArrowRight") lbScrollToSlide(Math.min(lbCount - 1, lbIndex + 1));
+    else if (e.key === "ArrowLeft") lbScrollToSlide(Math.max(0, lbIndex - 1));
+  });
 
   // Fallback seed renders instantly; live data replaces it when it arrives.
   if (typeof PTS_PROJECTS !== "undefined") renderPortfolio(PTS_PROJECTS);

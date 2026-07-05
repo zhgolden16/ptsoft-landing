@@ -124,6 +124,25 @@ function sanitizeProjects(input) {
       const src = s(p.media.src, 500);
       if (src) out.media = { type, src };
     }
+    // Gallery: ordered mixed media (images + videos) shown in the visitor
+    // lightbox. First item doubles as the card cover.
+    if (Array.isArray(p.gallery)) {
+      const gallery = p.gallery.slice(0, 10).map((m) => {
+        if (!m || typeof m !== "object") return null;
+        const type = ["gif", "image", "video"].includes(m.type) ? m.type : "image";
+        const src = s(m.src, 500);
+        if (!src) return null;
+        const item = { type, src };
+        if (["portrait", "landscape"].includes(m.orientation)) item.orientation = m.orientation;
+        return item;
+      }).filter(Boolean);
+      if (gallery.length) {
+        out.gallery = gallery;
+        // keep legacy single-media field in sync so older cached frontends
+        // still render a cover
+        out.media = { type: gallery[0].type, src: gallery[0].src };
+      }
+    }
     return out;
   });
 }

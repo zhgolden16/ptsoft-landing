@@ -42,10 +42,15 @@
       "st.planned": "قيد التخطيط",
       "st.development": "قيد التطوير",
       "st.live": "مباشر",
-      "media.label": "وسائط البطاقة",
-      "media.empty": "بدون وسائط — سيُولَّد غلاف فني تلقائياً",
-      "media.upload": "رفع فيديو / صورة",
-      "media.clear": "إزالة الوسائط",
+      "media.label": "معرض المشروع (صور + فيديو)",
+      "media.empty": "لا وسائط بعد — سيُولَّد غلاف فني تلقائياً",
+      "media.upload": "+ إضافة صور / فيديو",
+      "media.hint": "العنصر الأول هو غلاف البطاقة. يُفضَّل 3 صور على الأقل + فيديو: أندرويد عمودي، سطح المكتب أفقي، الويب حسب المشروع.",
+      "media.cover": "الغلاف",
+      "media.remove": "إزالة",
+      "media.moveStart": "تقديم",
+      "media.moveEnd": "تأخير",
+      "msg.max10": "أقصى عدد 10 عناصر وسائط لكل مشروع",
       "msg.loadFail": "تعذر تحميل المشاريع",
       "msg.published": "تم النشر — التغييرات مباشرة الآن ✓",
       "msg.publishFail": "فشل النشر",
@@ -91,10 +96,15 @@
       "st.planned": "Planned",
       "st.development": "In development",
       "st.live": "Live",
-      "media.label": "Card media",
-      "media.empty": "No media — an abstract brand cover will be generated",
-      "media.upload": "Upload video / image",
-      "media.clear": "Remove media",
+      "media.label": "Project gallery (images + video)",
+      "media.empty": "No media yet — an abstract brand cover will be generated",
+      "media.upload": "+ Add images / video",
+      "media.hint": "The first item is the card cover. At least 3 images + a video are recommended: Android portrait, desktop landscape, web either way.",
+      "media.cover": "Cover",
+      "media.remove": "Remove",
+      "media.moveStart": "Move forward",
+      "media.moveEnd": "Move back",
+      "msg.max10": "Maximum of 10 media items per project",
       "msg.loadFail": "Couldn't load projects",
       "msg.published": "Published — changes are live now ✓",
       "msg.publishFail": "Publish failed",
@@ -140,10 +150,15 @@
       "st.planned": "Planifié",
       "st.development": "En développement",
       "st.live": "En ligne",
-      "media.label": "Média de la carte",
-      "media.empty": "Sans média — une couverture artistique sera générée",
-      "media.upload": "Téléverser vidéo / image",
-      "media.clear": "Retirer le média",
+      "media.label": "Galerie du projet (images + vidéo)",
+      "media.empty": "Pas encore de média — une couverture artistique sera générée",
+      "media.upload": "+ Ajouter images / vidéo",
+      "media.hint": "Le premier élément est la couverture de la carte. Au moins 3 images + une vidéo recommandées : Android portrait, desktop paysage, web au choix.",
+      "media.cover": "Couverture",
+      "media.remove": "Retirer",
+      "media.moveStart": "Avancer",
+      "media.moveEnd": "Reculer",
+      "msg.max10": "Maximum de 10 médias par projet",
       "msg.loadFail": "Impossible de charger les projets",
       "msg.published": "Publié — les changements sont en ligne ✓",
       "msg.publishFail": "Échec de la publication",
@@ -231,6 +246,26 @@
     toast.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  }
+
+  /* Detect media orientation from real pixel dimensions so portrait
+     Android captures and landscape desktop captures each display right. */
+  function probeOrientation(url, isVideo) {
+    return new Promise((resolve) => {
+      const done = (w, h) => resolve(w && h && h > w ? "portrait" : "landscape");
+      if (isVideo) {
+        const v = document.createElement("video");
+        v.preload = "metadata";
+        v.onloadedmetadata = () => done(v.videoWidth, v.videoHeight);
+        v.onerror = () => resolve("landscape");
+        v.src = url;
+      } else {
+        const im = new Image();
+        im.onload = () => done(im.naturalWidth, im.naturalHeight);
+        im.onerror = () => resolve("landscape");
+        im.src = url;
+      }
+    });
   }
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -427,56 +462,115 @@
       });
     });
 
-    /* media */
-    const mediaBox = $('[data-bind="media"]');
-    const clearBtn = $('[data-act="clearMedia"]');
+    /* gallery — ordered images + videos; first item = card cover */
+    p.gallery = Array.isArray(p.gallery)
+      ? p.gallery
+      : (p.media && p.media.src ? [{ type: p.media.type, src: p.media.src }] : []);
+
+    const galleryBox = $('[data-bind="gallery"]');
     const fileInput = $('[data-act="upload"]');
     const prog = $(".upprog");
 
-    const drawMedia = () => {
-      if (p.media && p.media.src) {
-        mediaBox.innerHTML = p.media.type === "video"
-          ? `<video src="${p.media.src}" muted loop autoplay playsinline></video>`
-          : `<img src="${p.media.src}" alt="" />`;
-        clearBtn.hidden = false;
-      } else {
-        mediaBox.innerHTML = "";
-        const span = document.createElement("span");
-        span.className = "mediabox__empty";
-        span.textContent = t("media.empty");
-        mediaBox.appendChild(span);
-        clearBtn.hidden = true;
-      }
+    // keep the legacy single-media field pointing at the cover
+    const syncCover = () => {
+      if (p.gallery.length) p.media = { type: p.gallery[0].type, src: p.gallery[0].src };
+      else delete p.media;
     };
-    drawMedia();
 
-    clearBtn.addEventListener("click", () => { delete p.media; drawMedia(); refreshDirty(); });
+    const drawGallery = () => {
+      galleryBox.innerHTML = "";
+      if (!p.gallery.length) {
+        const empty = document.createElement("div");
+        empty.className = "gallery__empty";
+        empty.textContent = t("media.empty");
+        galleryBox.appendChild(empty);
+        return;
+      }
+      p.gallery.forEach((m, gi) => {
+        const cell = document.createElement("div");
+        cell.className = "gitem" + (m.orientation === "portrait" ? " gitem--portrait" : "");
+        if (m.type === "video") {
+          const v = document.createElement("video");
+          v.src = m.src;
+          v.muted = true; v.loop = true; v.playsInline = true;
+          v.preload = "metadata";
+          cell.appendChild(v);
+          cell.addEventListener("mouseenter", () => v.play().catch(() => {}));
+          cell.addEventListener("mouseleave", () => v.pause());
+          const badge = document.createElement("span");
+          badge.className = "gitem__badge";
+          badge.textContent = "▶";
+          cell.appendChild(badge);
+        } else {
+          const im = document.createElement("img");
+          im.src = m.src; im.alt = ""; im.loading = "lazy";
+          cell.appendChild(im);
+        }
+        if (gi === 0) {
+          const cover = document.createElement("span");
+          cover.className = "gitem__coverbadge";
+          cover.textContent = t("media.cover");
+          cell.appendChild(cover);
+        }
+        const tools = document.createElement("div");
+        tools.className = "gitem__tools";
+        const mkBtn = (label, title, fn) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.textContent = label;
+          b.title = title;
+          b.addEventListener("click", fn);
+          return b;
+        };
+        const swap = (a, b) => {
+          [p.gallery[a], p.gallery[b]] = [p.gallery[b], p.gallery[a]];
+          drawGallery(); syncCover(); refreshDirty();
+        };
+        if (gi > 0) tools.appendChild(mkBtn("↑", t("media.moveStart"), () => swap(gi, gi - 1)));
+        if (gi < p.gallery.length - 1) tools.appendChild(mkBtn("↓", t("media.moveEnd"), () => swap(gi, gi + 1)));
+        tools.appendChild(mkBtn("✕", t("media.remove"), () => {
+          p.gallery.splice(gi, 1);
+          drawGallery(); syncCover(); refreshDirty();
+        }));
+        cell.appendChild(tools);
+        galleryBox.appendChild(cell);
+      });
+    };
+    drawGallery();
 
     fileInput.addEventListener("change", async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      if (file.size > 4 * 1024 * 1024) return say(t("msg.tooBig"), true);
+      const files = Array.from(fileInput.files);
+      fileInput.value = "";
+      if (!files.length) return;
+      if (p.gallery.length + files.length > 10) return say(t("msg.max10"), true);
       prog.hidden = false;
       prog.removeAttribute("value"); // indeterminate
-      try {
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          credentials: "same-origin",
-          body: file,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || t("msg.uploadFail"));
-        p.media = { type: data.type, src: data.url };
-        drawMedia();
-        refreshDirty();
-        say(t("msg.uploaded"));
-      } catch (e) {
-        say(e.message, true);
-      } finally {
-        prog.hidden = true;
-        fileInput.value = "";
+      let failed = false;
+      for (const file of files) {
+        if (file.size > 4 * 1024 * 1024) {
+          say(`${file.name}: ${t("msg.tooBig")}`, true);
+          failed = true;
+          continue;
+        }
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": file.type },
+            credentials: "same-origin",
+            body: file,
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || t("msg.uploadFail"));
+          const orientation = await probeOrientation(data.url, data.type === "video");
+          p.gallery.push({ type: data.type, src: data.url, orientation });
+          drawGallery(); syncCover(); refreshDirty();
+        } catch (e) {
+          say(e.message, true);
+          failed = true;
+        }
       }
+      prog.hidden = true;
+      if (!failed) say(t("msg.uploaded"));
     });
 
     return node;

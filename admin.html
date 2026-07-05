@@ -130,17 +130,15 @@
             </label>
           </div>
           <div class="pitem__media">
-            <span class="pitem__media-label" data-i18n="media.label">وسائط البطاقة</span>
-            <div class="mediabox" data-bind="media">
-              <span class="mediabox__empty" data-i18n="media.empty">بدون وسائط — سيُولَّد غلاف فني تلقائياً</span>
-            </div>
+            <span class="pitem__media-label" data-i18n="media.label">معرض المشروع (صور + فيديو)</span>
+            <div class="gallery" data-bind="gallery"><!-- thumbnails injected --></div>
             <div class="mediabtns">
               <label class="btn-ghost btn-file">
-                <span data-i18n="media.upload">رفع فيديو / صورة</span>
-                <input type="file" data-act="upload" accept="video/mp4,video/webm,image/gif,image/jpeg,image/png,image/webp" hidden />
+                <span data-i18n="media.upload">+ إضافة صور / فيديو</span>
+                <input type="file" data-act="upload" accept="video/mp4,video/webm,image/gif,image/jpeg,image/png,image/webp" multiple hidden />
               </label>
-              <button class="tool tool--danger" data-act="clearMedia" hidden data-i18n="media.clear">إزالة الوسائط</button>
             </div>
+            <p class="media-hint" data-i18n="media.hint">العنصر الأول هو غلاف البطاقة. يُفضَّل 3 صور على الأقل + فيديو: أندرويد عمودي، سطح المكتب أفقي، الويب حسب المشروع.</p>
             <progress class="upprog" value="0" max="100" hidden></progress>
           </div>
         </div>
