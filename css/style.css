@@ -972,6 +972,10 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--ink); }
   visibility: hidden;
   transition: opacity 0.3s, visibility 0s 0.3s;
 }
+/* Belt-and-suspenders: opacity/visibility already hide this by default, but
+   `.ownergate{display:grid}` would otherwise override native [hidden] too
+   (author CSS beats the user-agent [hidden] rule regardless of specificity). */
+.ownergate[hidden] { display: none; }
 .ownergate.is-open {
   opacity: 1;
   visibility: visible;

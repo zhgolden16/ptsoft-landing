@@ -71,6 +71,11 @@ button { cursor: pointer; background: none; border: 0; }
     var(--deep);
   padding: 1rem;
 }
+/* `.gate{display:grid}` above is author CSS, so it silently overrides the
+   browser's own `[hidden]{display:none}` rule (author beats user-agent
+   regardless of specificity) — without this, gate.hidden=true in JS never
+   actually hides the login card. Higher-specificity selector wins it back. */
+.gate[hidden] { display: none; }
 .gate__card {
   width: min(400px, 100%);
   background: rgba(255, 255, 255, 0.06);
@@ -344,6 +349,8 @@ fieldset legend { font-size: 0.85rem; font-weight: 600; color: var(--ink-2); mar
   font-size: 0.9rem;
   animation: savebarIn 0.4s var(--ease);
 }
+/* same [hidden]-override issue as .gate above */
+.savebar[hidden] { display: none; }
 [dir="rtl"] .savebar { padding: 0.6rem 1.6rem 0.6rem 0.7rem; }
 @keyframes savebarIn { from { opacity: 0; transform: translate(-50%, 14px); } }
 .savebar .btn-ghost { padding: 0.45rem 1.1rem; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e8f0ee; }
