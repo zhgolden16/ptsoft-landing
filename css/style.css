@@ -1565,10 +1565,17 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
 .founder__photo img {
   width: 100%; height: 100%;
   object-fit: cover;
-  object-position: top center;
+  /* The source photos are tall portraits; the card only shows ~58% of their
+     height, so anchoring to the top wasted space on the ceiling and clipped
+     chins. Shift the crop down: trim the empty space above the heads and reveal
+     more of the lower half (full face + collar/tie). */
+  object-position: center 44%;
   transition: transform 0.7s var(--ease);
 }
 .founder:hover .founder__photo img { transform: scale(1.045); }
+/* Younes sits closer to the camera, so his face is larger and lower in frame;
+   push his crop down further so his whole face and beard sit fully in view. */
+.founder--ys .founder__photo img { object-position: center 52%; }
 .founder__body { padding: 1.35rem 1.4rem 1.6rem; display: grid; justify-items: center; gap: 0.3rem; }
 .founder__body h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
 .founder__role {
