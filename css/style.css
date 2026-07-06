@@ -1472,13 +1472,21 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
 }
 .lb__media {
   max-width: min(94vw, 1080px);
-  max-height: 100%;
+  /* Fit the whole media to the screen, whatever its shape. A percentage
+     max-height doesn't resolve reliably inside this flex/grid/scroll-snap
+     stack, so tall (portrait) media used to overflow and get clipped. Cap the
+     height against the viewport instead — leaving room for the top padding,
+     nav and meta bar — so nothing is ever cut on phone or desktop. */
+  max-height: calc(100vh - 8rem);
+  max-height: calc(100dvh - 8rem);
   width: auto; height: auto;
   object-fit: contain;
   border-radius: 14px;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
   background: #000;
 }
+/* Portrait media: keep it from getting too wide on big screens; the
+   viewport height cap above already guarantees the full frame is visible. */
 .lb__media--portrait { max-width: min(94vw, 420px); }
 
 .lb__nav {
