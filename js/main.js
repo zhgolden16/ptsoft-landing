@@ -640,6 +640,25 @@
     steps[0].querySelector(".process__head").setAttribute("aria-expanded", "true");
   }
 
+  /* ================= Founders: expandable cards ================= */
+  const foundersGrid = document.querySelector(".founders__grid");
+  if (foundersGrid) {
+    foundersGrid.addEventListener("click", (e) => {
+      const card = e.target.closest(".founder");
+      if (!card) return;
+      const open = card.classList.toggle("is-open");
+      card.setAttribute("aria-expanded", String(open));
+    });
+    foundersGrid.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest(".founder");
+      if (!card) return;
+      e.preventDefault();
+      const open = card.classList.toggle("is-open");
+      card.setAttribute("aria-expanded", String(open));
+    });
+  }
+
   /* ================= Copy to clipboard + toast ================= */
   const toast = document.getElementById("toast");
   let toastTimer = 0;

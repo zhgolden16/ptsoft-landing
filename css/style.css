@@ -1554,6 +1554,12 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
   text-align: center;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: box-shadow 0.4s var(--ease), border-color 0.4s, transform 0.3s var(--ease);
+}
+.founder:focus-visible {
+  outline: 3px solid var(--teal-bright);
+  outline-offset: 2px;
 }
 .founder__photo {
   position: relative;
@@ -1584,8 +1590,64 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
 /* Younes sits closer to the camera, so his face is larger and lower in frame;
    push his crop down further so his whole face and beard sit fully in view. */
 .founder--ys .founder__photo img { object-position: center 52%; }
-.founder__body { padding: 1.35rem 1.4rem 1.6rem; display: grid; justify-items: center; gap: 0.3rem; }
-.founder__body h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
+
+/* Founder preview row: always-visible name + expand chevron */
+.founder__body { padding: 1.35rem 1.4rem 1.6rem; }
+.founder__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.founder__preview h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
+.founder__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(20, 33, 58, 0.18);
+  color: var(--ink-2);
+  flex-shrink: 0;
+  transition: transform 0.4s var(--ease), background 0.3s, border-color 0.3s, color 0.3s;
+}
+.founder__expand svg {
+  transition: transform 0.4s var(--ease);
+}
+.founder:hover .founder__expand {
+  border-color: rgba(47, 157, 127, 0.4);
+  color: var(--teal);
+  background: rgba(47, 157, 127, 0.06);
+}
+.founder.is-open .founder__expand { transform: rotate(180deg); }
+
+/* Collapsible details: role, pulse, bio */
+.founder__details {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s var(--ease);
+}
+.founder__details > * {
+  overflow: hidden;
+  text-align: center;
+}
+.founder__details > .founder__role {
+  padding-top: 0;
+  transition: padding 0.5s var(--ease);
+}
+.founder__details > .founder__pulse {
+  margin: 0 auto;
+  transition: margin 0.5s var(--ease);
+}
+.founder__details > .founder__bio {
+  padding: 0;
+  transition: padding 0.5s var(--ease);
+}
+.founder.is-open .founder__details { grid-template-rows: 1fr; }
+.founder.is-open .founder__details > .founder__role { padding-top: 0.8rem; }
+.founder.is-open .founder__details > .founder__pulse { margin: 0.15rem auto; }
+.founder.is-open .founder__details > .founder__bio { padding: 0 0 0.35rem; }
+
 .founder__role {
   font-family: var(--font-display);
   font-size: 0.76rem;
@@ -1595,7 +1657,7 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
   color: var(--teal);
 }
 html[lang="ar"] .founder__role { letter-spacing: 0; font-size: 0.85rem; }
-.founder__pulse { width: 120px; height: 18px; opacity: 0.85; margin: 0.15rem 0; }
+.founder__pulse { width: 120px; height: 18px; opacity: 0.85; }
 .founder__bio { font-size: 0.9rem; line-height: 1.65; color: #52617e; max-width: 30ch; }
 
 @media (max-width: 680px) {
