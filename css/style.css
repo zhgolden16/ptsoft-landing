@@ -1627,26 +1627,26 @@ html[lang="ar"] [data-legal="ar"] { display: block; }
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.5s var(--ease);
 }
-.founder__details > * {
+.founder__details-inner {
   overflow: hidden;
   text-align: center;
 }
-.founder__details > .founder__role {
+.founder__details-inner > .founder__role {
   padding-top: 0;
   transition: padding 0.5s var(--ease);
 }
-.founder__details > .founder__pulse {
+.founder__details-inner > .founder__pulse {
   margin: 0 auto;
   transition: margin 0.5s var(--ease);
 }
-.founder__details > .founder__bio {
+.founder__details-inner > .founder__bio {
   padding: 0;
   transition: padding 0.5s var(--ease);
 }
 .founder.is-open .founder__details { grid-template-rows: 1fr; }
-.founder.is-open .founder__details > .founder__role { padding-top: 0.8rem; }
-.founder.is-open .founder__details > .founder__pulse { margin: 0.15rem auto; }
-.founder.is-open .founder__details > .founder__bio { padding: 0 0 0.35rem; }
+.founder.is-open .founder__details-inner > .founder__role { padding-top: 0.8rem; }
+.founder.is-open .founder__details-inner > .founder__pulse { margin: 0.15rem auto; }
+.founder.is-open .founder__details-inner > .founder__bio { padding: 0 0 0.35rem; }
 
 .founder__role {
   font-family: var(--font-display);
